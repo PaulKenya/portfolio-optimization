@@ -93,6 +93,9 @@ def main():
     path_length = config["PATH_LENGTH"]
     _, optimization_interval_unit = split_time_string(config["OPTIMIZATION_INTERVAL"])
     process_count = min(config.get("PROCESS_COUNT", os.cpu_count()), 8)
+    print(f"Using {process_count} processes for optimization. os cpu count: {os.cpu_count()}")
+    print(f"sleeping for 10 seconds to allow for proper logging.")
+    time.sleep(10)
 
     date_ranges = pd.date_range(
         start=pd.to_datetime(start_date),
