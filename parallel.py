@@ -119,8 +119,11 @@ def main():
         exit(0)
 
     with mp.Pool(process_count) as pool:
+        print(f"Starting {process_count} processes for optimization.")
         results = pool.starmap(perform_optimization, chunks)
+        print(f"Completed {process_count} processes for optimization.")
 
+    print("Saving results to optimization_results.csv.")
     flat_results = [item for sublist in results for item in sublist]
     results_df = pd.DataFrame(flat_results)
     results_df.to_csv(os.path.join(config["DATA_FOLDER"], 'optimization_results.csv'), index=False)
