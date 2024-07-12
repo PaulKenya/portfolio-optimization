@@ -40,26 +40,16 @@ client = Client(api_key, api_secret)
 
 def fetch_historical_data(symbol, start, end, interval):
     print(f"fetch_historical_data: Getting data for {symbol}")
-    request_count = 0
-    start_time = time.time()
-    rate_limit = 1200
+    retry_count = 0
 
-    while True:
+    while retry_count < 5:
         try:
             klines = client.get_historical_klines(symbol, interval, subtract_period(start, lookback_period), end)
-            request_count += 1
-
-            if request_count >= rate_limit:
-                elapsed_time = time.time() - start_time
-                if elapsed_time < 60:
-                    time.sleep(60 - elapsed_time)
-                request_count = 0
-                start_time = time.time()
-
             break
         except Exception as e:
             print(f"An error occurred: {e}")
             time.sleep(1)
+            retry_count += 1
             print(f"fetch_historical_data: Retrying getting data for {symbol}")
 
     print(f"fetch_historical_data: Data received for {symbol}")
@@ -85,25 +75,45 @@ def load_log():
 
 
 def fetch_and_save_data(crypto_list, start_date, end_date, interval):
-    log = load_log()
+    request_count = 0
+    start_time = time.time()
+    rate_limit = 600
+
+    # log = load_log()
     for crypto in crypto_list:
-        print(f"Processing {crypto}")
-        symbol = f"{crypto}USDT"
-        last_fetched = log.get(symbol, start_date)
-        df = fetch_historical_data(symbol, last_fetched, end_date, interval)
-        df['symbol'] = crypto
+        retry_count = 0
+        try:
+            while retry_count < 1:
+                if request_count >= rate_limit:
+                    elapsed_time = time.time() - start_time
+                    if elapsed_time < 60:
+                        time.sleep(60 - elapsed_time)
+                    request_count = 0
+                    start_time = time.time()
+                else:
+                    print(f"Processing {crypto}")
+                    symbol = f"{crypto}USDT"
+                    # last_fetched = log.get(symbol, start_date)
+                    df = fetch_historical_data(symbol, start_date, end_date, interval)
+                    df['symbol'] = crypto
 
-        # Save progressively
-        csv_file = os.path.join(data_folder, f"{crypto}_data.csv")
-        if os.path.exists(csv_file):
-            existing_df = pd.read_csv(csv_file, index_col='timestamp', parse_dates=True)
-            df = pd.concat([existing_df, df])
-            df = df[~df.index.duplicated(keep='last')]
+                    # Save progressively
+                    csv_file = os.path.join(data_folder, f"{crypto}_data.csv")
+                    df.to_csv(csv_file)
 
-        df.to_csv(csv_file)
-        log[symbol] = df.index.max().strftime("%Y-%m-%dT%H:%M:%S")
-        save_log(log)
-        print(f"Completed processing for {crypto}")
+                    # if not df.empty and pd.notna(df.index.max()):
+                    #     log[symbol] = df.index.max().strftime("%Y-%m-%dT%H:%M:%S")
+                    # else:
+                    #     log[symbol] = last_fetched  # Retain the last fetched date if no new data
+                    #
+                    # save_log(log)
+                    print(f"Completed processing for {crypto}")
+                    break
+        except Exception as e:
+            print(f"An error occurred on fetch_and_save_data: {e}. Sleeping for 10 seconds before retrying.")
+            time.sleep(10)
+            retry_count += 1
+            print(f"fetch_and_save_data: Retrying getting data for {crypto}")
 
 
 # Check if the parameters have changed
@@ -123,7 +133,13 @@ fetch_and_save_data(crypto_list, start_date, end_date, interval)
 
 # Combine data
 print("Combining data from all cryptocurrencies")
-combined_df = pd.concat([pd.read_csv(os.path.join(data_folder, f"{crypto}_data.csv"), index_col='timestamp', parse_dates=True) for crypto in crypto_list])
+combined_df = pd.concat([
+    df for df in (
+        pd.read_csv(os.path.join(data_folder, f"{crypto}_data.csv"), index_col='timestamp', parse_dates=True)
+        for crypto in crypto_list
+        if os.path.exists(os.path.join(data_folder, f"{crypto}_data.csv"))
+    ) if not df.empty
+])
 
 # Calculate additional metrics
 print("Calculating additional metrics")
@@ -184,3 +200,4 @@ print(f"Data collection and processing complete. Files saved in '{data_folder}' 
 
 # Generate README.md file
 generate_readme.create_readme(start_date, end_date, crypto_list, combined_df.columns, correlation_matrix.columns, volatility.index, data_folder)
+exit(0)
