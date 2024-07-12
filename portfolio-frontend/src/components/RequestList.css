@@ -1,0 +1,25 @@
+/* src/components/RequestList.css */
+
+.custom-table {
+    font-family: 'Arial', sans-serif;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.custom-table th,
+.custom-table td {
+    padding: 15px;
+    text-align: left;
+}
+
+.custom-table th {
+    background-color: #f8f9fa;
+    font-weight: bold;
+}
+
+.custom-table .btn-danger {
+    font-size: 1rem;
+    padding: 5px 10px;
+}

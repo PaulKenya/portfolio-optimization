@@ -1,6 +1,4 @@
 cvxpy==1.5.1
-Django==5.0.7
-djangorestframework==3.15.2
 matplotlib==3.8.4
 networkx==3.3
 numpy==1.26.4
@@ -8,3 +6,9 @@ pandas==2.2.2
 python-dotenv==0.21.0
 python_binance==1.0.19
 scipy==1.13.1
+Flask~=3.0.3
+Flask-SQLAlchemy
+Flask-Migrate
+pymysql
+sqlalchemy~=2.0.30
+flask-cors

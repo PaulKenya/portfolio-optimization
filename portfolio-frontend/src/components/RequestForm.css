@@ -1,0 +1,20 @@
+.custom-form {
+    font-family: 'Arial', sans-serif;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.custom-form .form-label {
+    font-weight: 500;
+}
+
+.custom-form .form-control {
+    margin-bottom: 10px;
+}
+
+.custom-form .btn-success {
+    font-family: 'Arial', sans-serif;
+    font-weight: 500;
+}

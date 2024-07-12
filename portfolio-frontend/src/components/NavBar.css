@@ -1,0 +1,32 @@
+/* src/components/NavBar.css */
+
+.custom-navbar {
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 10px 20px;
+}
+
+.custom-brand {
+    font-family: 'Arial', sans-serif;
+    font-weight: bold;
+    color: #000000;
+    margin-left: 0; /* Remove left margin */
+    padding: 0; /* Remove padding */
+}
+
+.custom-nav {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+.custom-nav-link {
+    font-family: 'Arial', sans-serif;
+    font-weight: 500;
+    color: #000000;
+    margin: 0 20px;
+}
+
+.custom-nav-link:hover {
+    color: #28a745;
+}

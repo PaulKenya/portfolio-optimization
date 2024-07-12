@@ -1,0 +1,15 @@
+/* src/pages/HomePage.css */
+
+.custom-card {
+    font-family: 'Arial', sans-serif;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.custom-card-header {
+    font-weight: bold;
+    background-color: #f8f9fa;
+    color: #000000;
+}
