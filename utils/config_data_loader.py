@@ -2,7 +2,7 @@ import os
 import pandas as pd
 from datetime import datetime, timedelta
 import re
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 from dotenv import load_dotenv
 
@@ -13,8 +13,8 @@ def load_config() -> Dict[str, Any]:
     config: Dict[str, Any] = {
         "START_DATE": os.getenv("START_DATE", "2020-01-01"),
         "END_DATE": os.getenv("END_DATE", "2021-01-01"),
-        "OPTIMIZATION_INTERVAL": os.getenv("OPTIMIZATION_INTERVAL", "1m"),
-        "LOOK_BACK_PERIOD": os.getenv("LOOK_BACK_PERIOD", "5m"),
+        "OPTIMIZATION_INTERVAL": os.getenv("INTERVAL", "1m"),
+        "LOOK_BACK_PERIOD": os.getenv("LOOKBACK_PERIOD", "5m"),
         "NUM_ASSETS": int(os.getenv("NUM_ASSETS", 5)),
         "PATH_LENGTH": int(os.getenv("PATH_LENGTH", 3)),
         "DESIRED_AVERAGE_CENTRALITY": float(os.getenv("DESIRED_AVERAGE_CENTRALITY", "0.5")),
@@ -90,10 +90,7 @@ def subtract_period(date_str: datetime | str, period_str: str) -> str:
     if isinstance(date_str, datetime):
         date = date_str
     else:
-        try:
-            date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
-        except ValueError:
-            date = datetime.strptime(date_str, "%Y-%m-%d")
+        date = parse_date(date_str)
 
     match = re.match(r"(\d+)([smhdMy])", period_str)
     if not match:
@@ -137,10 +134,7 @@ def add_period(date_str: str, period_str: str) -> str:
     if isinstance(date_str, datetime):
         date = date_str
     else:
-        try:
-            date = datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S")
-        except ValueError:
-            date = datetime.strptime(date_str, "%Y-%m-%d")
+        date = parse_date(date_str)
 
     match = re.match(r"(\d+)([smhdMy])", period_str)
     if not match:
@@ -175,3 +169,21 @@ def add_period(date_str: str, period_str: str) -> str:
     new_date = date + delta
 
     return new_date.strftime("%Y-%m-%dT%H:%M:%S")
+
+
+def parse_date(date_str: str) -> pd.Timestamp:
+    supported_formats: List[str] = [
+        '%Y-%m-%dT%H:%M:%S',
+        '%Y-%m-%d',
+        '%Y-%m-%dT%H:%M:%SZ',
+        '%Y-%m-%d %H:%M:%S',
+    ]
+
+    for date_format in supported_formats:
+        try:
+            parsed_date = datetime.strptime(date_str, date_format)
+            return pd.to_datetime(parsed_date)
+        except ValueError:
+            continue
+
+    raise ValueError(f"Date string '{date_str}' is not in a supported format.")

@@ -8,7 +8,7 @@ import sys
 import generate_readme
 import time
 
-from utils.config_data_loader import subtract_period
+from utils.config_data_loader import subtract_period, parse_date
 
 # Load environment variables
 load_dotenv(override=True)
@@ -37,15 +37,28 @@ current_config = {
 # Initialize Binance client with API credentials
 client = Client(api_key, api_secret)
 
+request_count = 0
+start_time = time.time()
+rate_limit = 600
+
 
 def fetch_historical_data(symbol, start, end, interval):
+    global request_count, start_time
     print(f"fetch_historical_data: Getting data for {symbol}")
     retry_count = 0
 
     while retry_count < 5:
         try:
-            klines = client.get_historical_klines(symbol, interval, subtract_period(start, lookback_period), end)
-            break
+            if request_count >= rate_limit:
+                elapsed_time = time.time() - start_time
+                if elapsed_time < 60:
+                    time.sleep(60 - elapsed_time)
+                request_count = 0
+                start_time = time.time()
+            else:
+                klines = client.get_historical_klines(symbol, interval, subtract_period(start, lookback_period), end)
+                request_count += 1
+                break
         except Exception as e:
             print(f"An error occurred: {e}")
             time.sleep(1)
@@ -75,40 +88,30 @@ def load_log():
 
 
 def fetch_and_save_data(crypto_list, start_date, end_date, interval):
-    request_count = 0
-    start_time = time.time()
-    rate_limit = 600
 
     # log = load_log()
     for crypto in crypto_list:
         retry_count = 0
         try:
             while retry_count < 1:
-                if request_count >= rate_limit:
-                    elapsed_time = time.time() - start_time
-                    if elapsed_time < 60:
-                        time.sleep(60 - elapsed_time)
-                    request_count = 0
-                    start_time = time.time()
-                else:
-                    print(f"Processing {crypto}")
-                    symbol = f"{crypto}USDT"
-                    # last_fetched = log.get(symbol, start_date)
-                    df = fetch_historical_data(symbol, start_date, end_date, interval)
-                    df['symbol'] = crypto
+                print(f"Processing {crypto}")
+                symbol_usdt = f"{crypto}USDT"
+                # last_fetched = log.get(symbol, start_date)
+                df = fetch_historical_data(symbol_usdt, start_date, end_date, interval)
+                df['symbol'] = crypto
 
-                    # Save progressively
-                    csv_file = os.path.join(data_folder, f"{crypto}_data.csv")
-                    df.to_csv(csv_file)
+                # Save progressively
+                csv_file = os.path.join(data_folder, f"{crypto}_data.csv")
+                df.to_csv(csv_file)
 
-                    # if not df.empty and pd.notna(df.index.max()):
-                    #     log[symbol] = df.index.max().strftime("%Y-%m-%dT%H:%M:%S")
-                    # else:
-                    #     log[symbol] = last_fetched  # Retain the last fetched date if no new data
-                    #
-                    # save_log(log)
-                    print(f"Completed processing for {crypto}")
-                    break
+                # if not df.empty and pd.notna(df.index.max()):
+                #     log[symbol] = df.index.max().strftime("%Y-%m-%dT%H:%M:%S")
+                # else:
+                #     log[symbol] = last_fetched  # Retain the last fetched date if no new data
+                #
+                # save_log(log)
+                print(f"Completed processing for {crypto}")
+                break
         except Exception as e:
             print(f"An error occurred on fetch_and_save_data: {e}. Sleeping for 10 seconds before retrying.")
             time.sleep(10)
@@ -116,33 +119,40 @@ def fetch_and_save_data(crypto_list, start_date, end_date, interval):
             print(f"fetch_and_save_data: Retrying getting data for {crypto}")
 
 
+def pull_from_binance():
+    # Fetch and process data
+    fetch_and_save_data(crypto_list, start_date, end_date, interval)
+
+    # Combine data
+    print("Combining data from all cryptocurrencies")
+    return pd.concat([
+        df for df in (
+            pd.read_csv(os.path.join(data_folder, f"{crypto}_data.csv"), index_col='timestamp', parse_dates=True)
+            for crypto in crypto_list
+            if os.path.exists(os.path.join(data_folder, f"{crypto}_data.csv"))
+        ) if not df.empty
+    ])
+
 # Check if the parameters have changed
 if os.path.exists(config_file_path):
     with open(config_file_path, 'r') as config_file:
         saved_config = json.load(config_file)
     if saved_config == current_config:
         print("Parameters have not changed. Skipping data pull from Binance.")
-        sys.exit(0)
+        combined_df = pd.read_csv(os.path.join(data_folder, 'crypto_data.csv'), index_col='timestamp', parse_dates=True)
     else:
         print("Parameters have changed. Pulling new data from Binance.")
+        combined_df = pull_from_binance()
 else:
     print("No existing configuration found. Pulling data from Binance.")
+    combined_df = pull_from_binance()
 
-# Fetch and process data
-fetch_and_save_data(crypto_list, start_date, end_date, interval)
-
-# Combine data
-print("Combining data from all cryptocurrencies")
-combined_df = pd.concat([
-    df for df in (
-        pd.read_csv(os.path.join(data_folder, f"{crypto}_data.csv"), index_col='timestamp', parse_dates=True)
-        for crypto in crypto_list
-        if os.path.exists(os.path.join(data_folder, f"{crypto}_data.csv"))
-    ) if not df.empty
-])
 
 # Calculate additional metrics
 print("Calculating additional metrics")
+combined_df = combined_df.reset_index(drop=False)
+combined_df['timestamp'] = combined_df['timestamp'].apply(lambda x: parse_date(str(x)).strftime("%Y-%m-%dT%H:%M:%S"))
+combined_df = combined_df.set_index('timestamp')
 combined_df['daily_return'] = combined_df.groupby('symbol')['close'].pct_change()
 combined_df['log_return'] = np.log(combined_df['close'] / combined_df['close'].shift(1))
 combined_df['market_cap'] = combined_df['close'] * combined_df['volume']
