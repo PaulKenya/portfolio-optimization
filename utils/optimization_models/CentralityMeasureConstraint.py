@@ -5,7 +5,6 @@ import cvxpy as cp
 from utils.centrality_measures import calculate_centrality_measures
 from utils.optimization_models.Graph import Graph
 from utils.performance_calculation import calculate_portfolio_profit
-from utils.visualization import visualize_graph
 
 
 class CentralityMeasureConstraint:
@@ -28,18 +27,16 @@ class CentralityMeasureConstraint:
 
         # Define the optimization problem
         objective = cp.Maximize(self.returns @ x - cp.quad_form(x, self.covariance_matrix))
-        centrality_constraint_lower = centrality_vector @ x >= self.desired_avg_centrality
-        centrality_constraint_upper = centrality_vector @ x <= self.desired_avg_centrality
+        centrality_constraint = centrality_vector @ x == self.desired_avg_centrality
         constraints = [
             cp.sum(x) == 1,  # Weights sum to 1
             x >= 0,          # No short selling
-            centrality_constraint_lower,
-            centrality_constraint_upper
+            centrality_constraint
         ]
         prob = cp.Problem(objective, constraints)
 
         try:
-            prob.solve()
+            prob.solve(solver=cp.MOSEK)
         except Exception as e:
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
