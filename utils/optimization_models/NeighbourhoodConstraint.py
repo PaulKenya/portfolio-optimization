@@ -1,3 +1,5 @@
+import traceback
+
 import networkx as nx
 import numpy as np
 import pandas as pd
@@ -44,8 +46,9 @@ class NeighbourhoodConstraintMIP:
 
         try:
             prob = cp.Problem(objective, constraints)
-            prob.solve(solver=cp.ECOS_BB)
+            prob.solve(solver=cp.MOSEK)
         except Exception as e:
+            traceback.print_exc()
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
 
@@ -129,8 +132,9 @@ class NeighbourhoodConstraintSDP:
 
         try:
             prob = cp.Problem(objective, constraints)
-            prob.solve(solver=cp.SCS)
+            prob.solve(solver=cp.MOSEK)
         except Exception as e:
+            traceback.print_exc()
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
 

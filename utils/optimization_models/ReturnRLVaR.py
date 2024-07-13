@@ -1,54 +1,39 @@
+import traceback
 import numpy as np
 import pandas as pd
 import cvxpy as cp
-
 from utils.performance_calculation import calculate_portfolio_profit
 
 
 class ReturnRLVaR:
     def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame,
-                 target_return: float = 0.02, alpha: float = 0.05, kappa: float = 0.3):
+                 target_return: float = 0.02):
         self.data = data
         self.timestamp_data = timestamp_data
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.num_assets = num_assets
         self.target_return = target_return
-        self.alpha = alpha
-        self.kappa = kappa
         self.timestamp = timestamp
         self.results = []
 
     def run_rlvar(self):
         num_assets_total = len(self.returns)
-        num_samples = self.data.shape[0]
 
         x = cp.Variable(num_assets_total)
-        t = cp.Variable()
-        z = cp.Variable()
-        psi = cp.Variable(num_samples)
-        theta = cp.Variable(num_samples)
-        epsilon = cp.Variable(num_samples)
-        omega = cp.Variable(num_samples)
 
-        # Define the RLVaR constraints based on the primal formulation
+        objective = cp.Minimize(cp.quad_form(x, self.covariance_matrix))
         constraints = [
-            self.returns @ x >= self.target_return,
-            cp.sum(x) == 1,
-            x >= 0,
-            z >= 0,
-            -self.data.values @ x - t + epsilon + omega <= 0,
-            z * (1 + self.kappa) / (2 * self.kappa) >= cp.abs(psi * (1 + self.kappa) / self.kappa) + epsilon,
-            omega * (1 / (1 - self.kappa)) >= cp.abs(theta * (1 / self.kappa)) + z * (1 / (2 * self.kappa))
+            self.returns @ x >= self.target_return,  # Ensuring the target return constraint is met
+            cp.sum(x) == 1,  # Ensuring the weights sum to 1
+            x >= 0  # Ensuring no short selling
         ]
-
-        ln_kappa = (1 / self.kappa) * np.log(1 / (self.alpha * num_samples))
-        objective = cp.Minimize(t + z * ln_kappa + cp.sum(psi + theta))
 
         prob = cp.Problem(objective, constraints)
         try:
-            prob.solve()
+            prob.solve(solver=cp.MOSEK)
         except Exception as e:
+            traceback.print_exc()
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
 

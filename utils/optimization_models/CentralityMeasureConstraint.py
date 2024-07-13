@@ -5,6 +5,7 @@ import cvxpy as cp
 from utils.centrality_measures import calculate_centrality_measures
 from utils.optimization_models.Graph import Graph
 from utils.performance_calculation import calculate_portfolio_profit
+from utils.visualization import visualize_graph
 
 
 class CentralityMeasureConstraint:

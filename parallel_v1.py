@@ -1,6 +1,7 @@
 import copy
 import os
 import time
+import traceback
 
 import pandas as pd
 import multiprocessing as mp
@@ -74,6 +75,7 @@ def perform_optimization(returns_df, start_date, end_date, optimization_interval
         print(f"Exiting process with start date {start_date}")
         return results
     except Exception as e:
+        traceback.print_exc()
         print(f"Error in perform_optimization: {e}")
         return results
 

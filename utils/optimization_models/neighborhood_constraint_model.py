@@ -1,3 +1,5 @@
+import traceback
+
 import cvxpy as cp
 import numpy as np
 import networkx as nx
@@ -47,6 +49,7 @@ def optimize_portfolio_with_neighborhood_constraint(pivoted_data, num_assets, gr
     try:
         prob.solve(solver=cp.ECOS_BB)
     except Exception as e:
+        traceback.print_exc()
         print(f"----------> Optimization problem encountered an error: {e}")
         return None
 

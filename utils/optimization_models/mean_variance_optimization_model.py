@@ -1,3 +1,5 @@
+import traceback
+
 import cvxpy as cp
 import numpy as np
 
@@ -24,6 +26,7 @@ def optimize_portfolio_mean_variance(pivoted_data, num_assets):
     try:
         prob.solve()
     except Exception as e:
+        traceback.print_exc()
         print(f"----------> Optimization problem encountered an error: {e}")
         return None
 

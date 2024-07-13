@@ -1,3 +1,5 @@
+import traceback
+
 import numpy as np
 import pandas as pd
 import cvxpy as cp
@@ -32,6 +34,7 @@ class MeanVariance:
         try:
             prob.solve()
         except Exception as e:
+            traceback.print_exc()
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
 

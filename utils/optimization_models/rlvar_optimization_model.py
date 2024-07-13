@@ -1,3 +1,5 @@
+import traceback
+
 import cvxpy as cp
 import numpy as np
 import pandas as pd
@@ -103,6 +105,7 @@ def optimize_portfolio_with_rlvar(pivoted_data, centrality_vector, desired_avg_c
         return optimal_weights
 
     except Exception as e:
+        traceback.print_exc()
         print(f"Error during optimization: {e}")
         return None
 

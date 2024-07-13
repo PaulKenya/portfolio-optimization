@@ -1,3 +1,5 @@
+import traceback
+
 import networkx as nx
 import numpy as np
 
@@ -10,6 +12,7 @@ def calculate_centrality_measures(graph: nx.Graph):
     try:
         degree_centrality = nx.degree_centrality(graph)
     except Exception as e:
+        traceback.print_exc()
         print(f"Error calculating degree centrality: {e}")
 
     try:
@@ -23,11 +26,13 @@ def calculate_centrality_measures(graph: nx.Graph):
         except nx.PowerIterationFailedConvergence as e:
             print(f"Error: Eigenvector centrality failed to converge with fallback initial guess: {e}")
     except Exception as e:
+        traceback.print_exc()
         print(f"Error calculating eigenvector centrality: {e}")
 
     try:
         subgraph_centrality = nx.subgraph_centrality(graph)
     except Exception as e:
+        traceback.print_exc()
         print(f"Error calculating subgraph centrality: {e}")
 
     return degree_centrality, eigenvector_centrality, subgraph_centrality
