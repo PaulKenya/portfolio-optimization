@@ -78,6 +78,9 @@ class HierarchicalRiskParity:
         rho = np.corrcoef(self.returns.T)
         distance = np.sqrt((1 - rho) / 2)
 
+        # Ensure that the distance matrix contains only finite values
+        distance = np.nan_to_num(distance, nan=1.0, posinf=1.0, neginf=1.0)
+
         # Convert the distance matrix to condensed form
         condensed_distance = pdist(distance)
 
