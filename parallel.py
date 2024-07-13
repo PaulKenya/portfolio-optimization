@@ -86,7 +86,7 @@ def main():
     returns_df.sort_index(inplace=True)
 
     start_date = config["START_DATE"]
-    end_date = "2020-01-01T01:20:00"
+    end_date = config["END_DATE"]
     optimization_interval = config["OPTIMIZATION_INTERVAL"]
     lookback_period = config["LOOK_BACK_PERIOD"]
     num_assets = config["NUM_ASSETS"]
