@@ -1,8 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
-from scipy.spatial.distance import pdist, squareform
-from sklearn.metrics import pairwise_distances
+from scipy.spatial.distance import pdist
 from utils.performance_calculation import calculate_portfolio_profit
 
 
@@ -23,7 +22,7 @@ class HierarchicalRiskParity:
     def get_ivp(self, Sigma):
         if Sigma.ndim == 0:
             return np.array([1.0])
-        ivp = 1.0 / np.diag(Sigma)
+        ivp = np.where(np.diag(Sigma) == 0, 0, 1.0 / np.diag(Sigma))
         return ivp / np.sum(ivp)
 
     def get_cluster_var(self, cluster_idx):
