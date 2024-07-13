@@ -46,13 +46,13 @@ def split_time_string(time_str: str) -> (int, str):
 def convert_unit_to_pandas_freq(unit_str):
     # Map the unit to pandas frequency
     freq_map = {
-        's': 'S',  # Seconds
-        'm': 'T',  # Minutes
-        'h': 'H',  # Hours
+        's': 's',  # Seconds
+        'm': 'min',  # Minutes
+        'h': 'h',  # Hours
         'd': 'D',  # Days
         'w': 'W',  # Weeks
-        'M': 'M',  # Months
-        'y': 'Y'  # Years
+        'M': 'ME',  # Months
+        'y': 'YE'  # Years
     }
 
     if unit_str not in freq_map:

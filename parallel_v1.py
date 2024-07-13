@@ -13,8 +13,7 @@ from utils.optimization_models.MeanVariance import MeanVariance
 from utils.optimization_models.NeighbourhoodConstraint import NeighbourhoodConstraintMIP, NeighbourhoodConstraintSDP
 
 
-def perform_optimization(args):
-    returns_df, start_date, end_date, optimization_interval, lookback_period, num_assets, desired_average_centrality, path_length = args
+def perform_optimization(returns_df, start_date, end_date, optimization_interval, lookback_period, num_assets, desired_average_centrality, path_length):
     results = []
     try:
         print(f"Starting process for {start_date} to {end_date}")
@@ -86,7 +85,7 @@ def main():
     returns_df.sort_index(inplace=True)
 
     start_date = config["START_DATE"]
-    end_date = "2020-01-01T01:20:00"
+    end_date = config["END_DATE"]
     optimization_interval = config["OPTIMIZATION_INTERVAL"]
     lookback_period = config["LOOK_BACK_PERIOD"]
     num_assets = config["NUM_ASSETS"]
@@ -124,10 +123,7 @@ def main():
 
     with mp.Pool(process_count) as pool:
         print(f"Starting {process_count} processes for optimization.")
-        results = []
-        async_results = [pool.apply_async(perform_optimization, (chunk,)) for chunk in chunks]
-        for async_result in async_results:
-            results.append(async_result.get())
+        results = pool.starmap(perform_optimization, chunks)
         print(f"Completed {process_count} processes for optimization.")
 
     print("Saving results to optimization_results.csv.")
