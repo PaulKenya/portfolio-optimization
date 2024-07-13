@@ -8,10 +8,11 @@ from utils.performance_calculation import calculate_portfolio_profit
 
 
 class NeighbourhoodConstraintMIP:
-    def __init__(self, data: pd.DataFrame, graph: Graph, path_length: int, num_assets: int, timestamp: str):
+    def __init__(self, data: pd.DataFrame, graph: Graph, path_length: int, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame):
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.data = data
+        self.timestamp_data = timestamp_data
         self.graph = graph
         self.num_assets = num_assets
         self.path_length = path_length
@@ -38,7 +39,7 @@ class NeighbourhoodConstraintMIP:
             x >= 0,          # No short selling
             (connection_matrix + identity_matrix) @ y <= 1,  # Adjusted Neighborhood constraint
             x <= y,          # Upper bound constraint
-            x >= 0.005 * y   # Relaxed Lower bound constraint
+            x >= y           # Lower bound constraint
         ]
 
         try:
@@ -78,11 +79,11 @@ class NeighbourhoodConstraintMIP:
 
             selected_assets = self.data.columns[optimal_weights > 0]
             weights = optimal_weights[optimal_weights > 0]
-            profit_percentage = calculate_portfolio_profit(self.data, selected_assets, weights)
+            profit_percentage = calculate_portfolio_profit(self.timestamp_data, selected_assets, weights)
             weights_dict = {selected_assets[i]: weights[i] * 100 for i in range(len(selected_assets))}
             self.results.append({
                 'Timestamp': pd.to_datetime(self.timestamp, utc=True).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                'Optimization Type': f'{graph_type.upper()} Neighborhood Constraint MIP',
+                'Optimization Type': f'{graph_type.upper()}-NC-MIP',
                 'Weights': weights_dict,
                 'Profit Percentage': profit_percentage
             })
@@ -93,10 +94,11 @@ class NeighbourhoodConstraintMIP:
 
 
 class NeighbourhoodConstraintSDP:
-    def __init__(self, data: pd.DataFrame, graph: Graph, path_length: int, num_assets: int, timestamp: str):
+    def __init__(self, data: pd.DataFrame, graph: Graph, path_length: int, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame):
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.data = data
+        self.timestamp_data = timestamp_data
         self.graph = graph
         self.num_assets = num_assets
         self.path_length = path_length
@@ -120,7 +122,7 @@ class NeighbourhoodConstraintSDP:
         constraints = [
             cp.bmat([[X, x[:, None]], [x[None, :], np.array([[1]])]]) >> 0,   # Semidefinite constraint
             X == X.T,                          # Symmetry constraint
-            cp.multiply(connection_matrix, X) >= -1e-6,  # Neighborhood constraint
+            cp.multiply(connection_matrix, X) == 0,  # Neighborhood constraint
             cp.sum(x) == 1,                    # Weights sum to 1
             x >= 0                             # No short selling
         ]
@@ -162,11 +164,11 @@ class NeighbourhoodConstraintSDP:
 
             selected_assets = self.data.columns[optimal_weights > 0]
             weights = optimal_weights[optimal_weights > 0]
-            profit_percentage = calculate_portfolio_profit(self.data, selected_assets, weights)
+            profit_percentage = calculate_portfolio_profit(self.timestamp_data, selected_assets, weights)
             weights_dict = {selected_assets[i]: weights[i] * 100 for i in range(len(selected_assets))}
             self.results.append({
                 'Timestamp': pd.to_datetime(self.timestamp, utc=True).strftime("%Y-%m-%dT%H:%M:%SZ"),
-                'Optimization Type': f'{graph_type.upper()} Neighborhood Constraint SDP',
+                'Optimization Type': f'{graph_type.upper()}-NC-SDP',
                 'Weights': weights_dict,
                 'Profit Percentage': profit_percentage
             })

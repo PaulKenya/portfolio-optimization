@@ -187,3 +187,9 @@ def parse_date(date_str: str) -> pd.Timestamp:
             continue
 
     raise ValueError(f"Date string '{date_str}' is not in a supported format.")
+
+
+def convert_datetime_to_str(date: pd.Timestamp | str) -> str:
+    if isinstance(date, str):
+        return date
+    return date.strftime("%Y-%m-%dT%H:%M:%S")

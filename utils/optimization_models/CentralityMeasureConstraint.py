@@ -8,10 +8,11 @@ from utils.performance_calculation import calculate_portfolio_profit
 
 
 class CentralityMeasureConstraint:
-    def __init__(self, data: pd.DataFrame, graph: Graph, desired_avg_centrality: float, num_assets: int, timestamp: str):
+    def __init__(self, data: pd.DataFrame, graph: Graph, desired_avg_centrality: float, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame):
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.data = data
+        self.timestamp_data = timestamp_data
         self.graph = graph
         self.num_assets = num_assets
         self.desired_avg_centrality = desired_avg_centrality
@@ -26,8 +27,8 @@ class CentralityMeasureConstraint:
 
         # Define the optimization problem
         objective = cp.Maximize(self.returns @ x - cp.quad_form(x, self.covariance_matrix))
-        centrality_constraint_lower = centrality_vector @ x >= self.desired_avg_centrality * 0.95
-        centrality_constraint_upper = centrality_vector @ x <= self.desired_avg_centrality * 1.05
+        centrality_constraint_lower = centrality_vector @ x >= self.desired_avg_centrality
+        centrality_constraint_upper = centrality_vector @ x <= self.desired_avg_centrality
         constraints = [
             cp.sum(x) == 1,  # Weights sum to 1
             x >= 0,          # No short selling
@@ -74,9 +75,9 @@ class CentralityMeasureConstraint:
 
             degree_centrality, eigenvector_centrality, subgraph_centrality = calculate_centrality_measures(graph)
             centrality_measures = {
-                f"{graph_type.upper()} Degree Centrality": degree_centrality,
-                f"{graph_type.upper()} Eigenvector Centrality": eigenvector_centrality,
-                f"{graph_type.upper()} Subgraph Centrality": subgraph_centrality
+                f"{graph_type.upper()}-DC": degree_centrality,
+                f"{graph_type.upper()}-EC": eigenvector_centrality,
+                f"{graph_type.upper()}-SC": subgraph_centrality
             }
 
             for centrality_name, centrality_measure in centrality_measures.items():
@@ -89,7 +90,7 @@ class CentralityMeasureConstraint:
 
                     selected_assets = self.data.columns[optimal_weights > 0]
                     weights = optimal_weights[optimal_weights > 0]
-                    profit_percentage = calculate_portfolio_profit(self.data, selected_assets, weights)
+                    profit_percentage = calculate_portfolio_profit(self.timestamp_data, selected_assets, weights)
                     weights_dict = {selected_assets[i]: weights[i] * 100 for i in range(len(selected_assets))}
                     self.results.append({
                         'Timestamp': pd.to_datetime(self.timestamp, utc=True).strftime("%Y-%m-%dT%H:%M:%SZ"),

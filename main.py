@@ -1,9 +1,11 @@
 import os
 import pandas as pd
 
-from utils.config_data_loader import load_config, split_time_string, subtract_period, load_data, add_period
+from utils.config_data_loader import load_config, split_time_string, subtract_period, load_data, add_period, \
+    convert_datetime_to_str
 from utils.optimization_models.CentralityMeasureConstraint import CentralityMeasureConstraint
 from utils.optimization_models.Graph import Graph
+from utils.optimization_models.HierarchicalRiskParity import HierarchicalRiskParity
 from utils.optimization_models.MeanVariance import MeanVariance
 from utils.optimization_models.NeighbourhoodConstraint import NeighbourhoodConstraintMIP, NeighbourhoodConstraintSDP
 from utils.optimization_models.ReturnRLVaR import ReturnRLVaR
@@ -59,18 +61,29 @@ def main():
             continue
 
         historical_data = historical_data.loc[historical_data.index.get_level_values('symbol').isin(active_assets)]
+        current_date = convert_datetime_to_str(start_date)
+        current_period_data = returns_df[returns_df.index.get_level_values('timestamp') == current_date].pivot_table(index='timestamp', columns='symbol', values='daily_return')
         pivoted_data = historical_data.pivot_table(index='timestamp', columns='symbol', values='daily_return')
 
-        # mean_variance = MeanVariance(pivoted_data, num_assets, start_date)
-        # results.extend(mean_variance.optimize())
+        mean_variance = MeanVariance(pivoted_data, num_assets, start_date, current_period_data)
+        results.extend(mean_variance.optimize())
 
         graph = Graph(pivoted_data)
 
-        # centrality_measure_constraint = CentralityMeasureConstraint(pivoted_data, graph, desired_average_centrality, num_assets, start_date)
-        # results.extend(centrality_measure_constraint.optimize())
+        centrality_measure_constraint = CentralityMeasureConstraint(pivoted_data, graph, desired_average_centrality, num_assets, start_date, current_period_data)
+        results.extend(centrality_measure_constraint.optimize())
 
-        return_rlvar = ReturnRLVaR(pivoted_data, num_assets, start_date)
+        neighbourhood_constraint_mip = NeighbourhoodConstraintMIP(pivoted_data, graph, path_length, num_assets, start_date, current_period_data)
+        results.extend(neighbourhood_constraint_mip.optimize())
+
+        neighbourhood_constraint_sdp = NeighbourhoodConstraintSDP(pivoted_data, graph, path_length, num_assets, start_date, current_period_data)
+        results.extend(neighbourhood_constraint_sdp.optimize())
+
+        return_rlvar = ReturnRLVaR(pivoted_data, num_assets, start_date, current_period_data, desired_average_centrality)
         results.extend(return_rlvar.optimize())
+
+        hierarchical_risk_parity = HierarchicalRiskParity(pivoted_data, num_assets, start_date, current_period_data)
+        results.extend(hierarchical_risk_parity.optimize())
 
         print("Completed Optimization for", start_date)
         start_date = add_period(start_date, optimization_interval)
@@ -82,3 +95,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+#%%

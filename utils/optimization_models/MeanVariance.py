@@ -6,8 +6,9 @@ from utils.performance_calculation import calculate_portfolio_profit
 
 
 class MeanVariance:
-    def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str, risk_aversion: float = 0.5):
+    def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame, risk_aversion: float = 0.5):
         self.data = data
+        self.timestamp_data = timestamp_data
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.num_assets = num_assets
@@ -67,11 +68,11 @@ class MeanVariance:
 
         selected_assets = self.data.columns[optimal_weights > 0]
         weights = optimal_weights[optimal_weights > 0]
-        profit_percentage = calculate_portfolio_profit(self.data, selected_assets, weights)
+        profit_percentage = calculate_portfolio_profit(self.timestamp_data, selected_assets, weights)
         weights_dict = {selected_assets[i]: weights[i] * 100 for i in range(len(selected_assets))}
         self.results.append({
             'Timestamp': pd.to_datetime(self.timestamp, utc=True).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            'Optimization Type': 'Mean Variance Optimization',
+            'Optimization Type': 'MVO',
             'Weights': weights_dict,
             'Profit Percentage': profit_percentage
         })

@@ -4,21 +4,12 @@ import cvxpy as cp
 
 from utils.performance_calculation import calculate_portfolio_profit
 
-class ReturnRLVaR:
-    def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str,
-                 target_return: float = 0.02, alpha: float = 0.05, kappa: float = 0.3):
-        """
-        Initializes the ReturnRLVaR class.
 
-        Parameters:
-        - data: pd.DataFrame containing asset returns
-        - num_assets: int, number of assets to include in the optimized portfolio
-        - timestamp: str, timestamp for the optimization run
-        - target_return: float, target return for the portfolio (default: 0.02)
-        - alpha: float, confidence level for VaR calculation (default: 0.05)
-        - kappa: float, deformation parameter for RLVaR (default: 0.3)
-        """
+class ReturnRLVaR:
+    def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame,
+                 target_return: float = 0.02, alpha: float = 0.05, kappa: float = 0.3):
         self.data = data
+        self.timestamp_data = timestamp_data
         self.returns = data.mean().values
         self.covariance_matrix = data.cov().values
         self.num_assets = num_assets
@@ -47,8 +38,8 @@ class ReturnRLVaR:
             x >= 0,
             z >= 0,
             -self.data.values @ x - t + epsilon + omega <= 0,
-            z * (1 + self.kappa) / (2 * self.kappa) >= cp.abs(psi * (1 + self.kappa) / self.kappa) + epsilon - 1e-6,
-            omega * (1 / (1 - self.kappa)) >= cp.abs(theta * (1 / self.kappa)) + z * (1 / (2 * self.kappa)) - 1e-6
+            z * (1 + self.kappa) / (2 * self.kappa) >= cp.abs(psi * (1 + self.kappa) / self.kappa) + epsilon,
+            omega * (1 / (1 - self.kappa)) >= cp.abs(theta * (1 / self.kappa)) + z * (1 / (2 * self.kappa))
         ]
 
         ln_kappa = (1 / self.kappa) * np.log(1 / (self.alpha * num_samples))
@@ -94,11 +85,11 @@ class ReturnRLVaR:
 
         selected_assets = self.data.columns[optimal_weights > 0]
         weights = optimal_weights[optimal_weights > 0]
-        profit_percentage = calculate_portfolio_profit(self.data, selected_assets, weights)
+        profit_percentage = calculate_portfolio_profit(self.timestamp_data, selected_assets, weights)
         weights_dict = {selected_assets[i]: weights[i] * 100 for i in range(len(selected_assets))}
         self.results.append({
             'Timestamp': pd.to_datetime(self.timestamp, utc=True).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            'Optimization Type': 'Return RLVaR Optimization',
+            'Optimization Type': 'RLVaR',
             'Weights': weights_dict,
             'Profit Percentage': profit_percentage
         })
