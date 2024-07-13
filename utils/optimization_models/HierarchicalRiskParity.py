@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import scipy.cluster.hierarchy as sch
+from scipy.spatial.distance import pdist, squareform
 from sklearn.metrics import pairwise_distances
 from utils.performance_calculation import calculate_portfolio_profit
 
@@ -77,10 +78,13 @@ class HierarchicalRiskParity:
         rho = np.corrcoef(self.returns.T)
         distance = np.sqrt((1 - rho) / 2)
 
+        # Convert the distance matrix to condensed form
+        condensed_distance = pdist(distance)
+
         if self.method == 'divisive':
-            hcluster = sch.dendrogram(sch.linkage(distance, method='ward'), no_plot=True)
+            hcluster = sch.dendrogram(sch.linkage(condensed_distance, method='ward'), no_plot=True)
         else:
-            hcluster = sch.dendrogram(sch.linkage(distance, method=self.method), no_plot=True)
+            hcluster = sch.dendrogram(sch.linkage(condensed_distance, method=self.method), no_plot=True)
 
         sorted_idx = hcluster['leaves']
 
