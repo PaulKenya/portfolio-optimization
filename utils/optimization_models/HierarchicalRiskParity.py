@@ -22,10 +22,13 @@ class HierarchicalRiskParity:
     def get_ivp(self, Sigma):
         if Sigma.ndim == 0:
             return np.array([1.0])
-        diag = np.diag(Sigma)
-        # Handle zero variances
+        diag = np.diag(Sigma).copy()  # Make a copy of the diagonal
+        # Handle zero variances by replacing them with a small positive number
         diag[diag == 0] = np.inf
         ivp = 1.0 / diag
+        ivp[np.isinf(ivp)] = 0  # Replace inf values resulting from zero variances with zero
+        if np.sum(ivp) == 0:
+            return np.zeros(len(diag))
         return ivp / np.sum(ivp)
 
     def get_cluster_var(self, cluster_idx):
@@ -108,7 +111,7 @@ class HierarchicalRiskParity:
 
         # Normalize the weights to sum to 1 for the selected assets
         total_weight = np.sum(optimal_weights)
-        if total_weight > 0:
+        if (total_weight > 0):
             optimal_weights /= total_weight
         else:
             print("----------> Error: No valid weights found.")
