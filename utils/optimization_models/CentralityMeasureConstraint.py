@@ -38,7 +38,7 @@ class CentralityMeasureConstraint:
         prob = cp.Problem(objective, constraints)
 
         try:
-            prob.solve(solver=cp.SCS)  # You can adjust the solver if needed
+            prob.solve()
         except Exception as e:
             print(f"----------> Optimization problem encountered an error: {e}")
             return None
