@@ -22,7 +22,10 @@ class HierarchicalRiskParity:
     def get_ivp(self, Sigma):
         if Sigma.ndim == 0:
             return np.array([1.0])
-        ivp = np.where(np.diag(Sigma) == 0, 0, 1.0 / np.diag(Sigma))
+        diag = np.diag(Sigma)
+        # Handle zero variances
+        diag[diag == 0] = np.inf
+        ivp = 1.0 / diag
         return ivp / np.sum(ivp)
 
     def get_cluster_var(self, cluster_idx):
