@@ -3,7 +3,6 @@ import pandas as pd
 import riskfolio as rp
 from utils.performance_calculation import calculate_portfolio_profit
 
-
 class HierarchicalRiskParity:
     def __init__(self, data: pd.DataFrame, num_assets: int, timestamp: str, timestamp_data: pd.DataFrame, risk: float):
         self.data = data
@@ -26,6 +25,14 @@ class HierarchicalRiskParity:
         linkage = 'single'  # Linkage method used to build clusters
         max_k = 4  # Max number of clusters used in two difference gap statistic, only for HERC model
         leaf_order = True  # Consider optimal order of leafs in dendrogram
+
+        # Calculate the distance matrix to check for non-finite values
+        dist_matrix = 1 - self.returns.corr()
+
+        # Ensure no non-finite values in distance matrix
+        if not np.isfinite(dist_matrix.values).all():
+            print("Error: Non-finite values found in distance matrix.")
+            return None
 
         weights = port.optimization(model=model,
                                     codependence=codependence,
