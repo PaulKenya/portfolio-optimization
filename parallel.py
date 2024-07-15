@@ -77,7 +77,7 @@ def perform_optimization(args):
             return_rlvar = ReturnRLVaR(pivoted_data, num_assets, start_date, current_period_data, desired_average_centrality)
             results.extend(return_rlvar.optimize())
 
-            hierarchical_risk_parity = HierarchicalRiskParity(pivoted_data, num_assets, start_date, current_period_data)
+            hierarchical_risk_parity = HierarchicalRiskParity(pivoted_data, num_assets, start_date, current_period_data, desired_average_centrality)
             results.extend(hierarchical_risk_parity.optimize())
 
             print("Completed Optimization for", start_date)
